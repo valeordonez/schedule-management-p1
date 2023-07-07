@@ -42,7 +42,7 @@ export class TeachersComponent {
     this.teacherService.getAllPersonByPersonTypePage(this.personType, 1, 5).subscribe(response => {
       //guardo los datos de la respuesta en el arreglo de docentes
       this.person = response.data.elements as Person[]
-      console.log("verrrrr ", this.person);
+      console.log("verrrrr33333 ", this.person);
       this.totalItems = response.data.pagination.totalNumberElements as number
       this.totalNumberPage = response.data.pagination.totalNumberPage as number
       this.pageSize = response.data.pagination.size as number
@@ -100,6 +100,8 @@ export class TeachersComponent {
 
       this.teacherService.findAllByDepartmetName(this.departmentId, this.personType, pageSolicitud, pageSize).subscribe((response) => {
         this.person = response.data.elements as Person[]
+        console.log("persona ", response);
+        console.log("persona ", this.person);
         this.totalItems = response.data.pagination.totalNumberElements as number
         this.totalNumberPage = response.data.pagination.totalNumberPage as number
         this.paginadorResource = response;

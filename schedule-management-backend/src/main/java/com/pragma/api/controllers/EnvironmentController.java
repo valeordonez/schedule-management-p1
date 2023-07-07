@@ -2,11 +2,6 @@ package com.pragma.api.controllers;
 
 import com.pragma.api.domain.*;
 import com.pragma.api.services.IEnvironmentService;
-import com.pragma.api.domain.AvailabilityEnvironmentDTO;
-import com.pragma.api.domain.EnvironmentDTO;
-import com.pragma.api.domain.GenericPageableResponse;
-import com.pragma.api.domain.ResourceList;
-import com.pragma.api.domain.Response;
 import com.pragma.api.model.enums.EnvironmentTypeEnumeration;
 import com.pragma.api.model.enums.RecurrenceEnumeration;
 import com.pragma.api.services.IFileEnvironmentService;
@@ -16,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -58,9 +54,15 @@ public class EnvironmentController {
     @ResponseBody
     public Response<EnvironmentDTO> updateEnvironment(@Valid @RequestBody EnvironmentDTO environmentDTO,
                                                       @PathVariable Integer id) {
+        System.out.println("llega al controlador de update");
         return this.environmentService.updateEnvironment(environmentDTO, id);
     }
 
+    @PostMapping("/addResourceForm")
+    public Response<Boolean> addResourceToEnvironmentForm(@RequestParam List<Integer> resourceList,
+                                                                  @RequestParam Integer environmentId) {
+        return this.environmentService.addResourceToEnvironmentForm(resourceList, environmentId);
+    }
     @PostMapping("/addResource")
     public Response<Boolean> addResourceToEnvironment(@RequestBody ResourceList resourceList,
                                                       @RequestParam Integer environmentId) {
@@ -115,6 +117,7 @@ public class EnvironmentController {
         return this.environmentService.getEnvironmentByCode(id);
     }
 
+    @PreAuthorize("hasRole('ROLE_ACADEMIC_MANAGER')")
     @GetMapping("/allTypes")
     public List<EnvironmentTypeEnumeration> findAllTypes() {
         return this.environmentService.findAllTypesEnvironment();
@@ -126,24 +129,28 @@ public class EnvironmentController {
         this.environmentService.deleteById(environmentId);
     }
 
-    @GetMapping("/findEnviromentAvailability")
-    public Response<List<EnvironmentDTO>> findEnviromentAvailability(
+    @PreAuthorize("hasRole('ROLE_SCHEDULE_MANAGER')")
+    @PostMapping("/findEnviromentAvailability")
+    public Response<GenericPageableResponse> findEnviromentAvailability(@RequestParam Integer page, @RequestParam Integer size,                                            
             @Valid @RequestBody AvailabilityEnvironmentDTO environmentAvailabilityDTO) {
+
+        Pageable pageable = PageRequest.of(page, size); 
+        
         if (environmentAvailabilityDTO.getRecurrence().equals(RecurrenceEnumeration.DIA)) {
             return this.environmentService.findAllByAvailabilityAndDayRecurrence(
                     environmentAvailabilityDTO.getStarting_date(),
-                    environmentAvailabilityDTO.getStarting_time(), environmentAvailabilityDTO.getEnding_time());
+                    environmentAvailabilityDTO.getStarting_time(), environmentAvailabilityDTO.getEnding_time(),pageable);
 
         } else if (environmentAvailabilityDTO.getRecurrence().equals(RecurrenceEnumeration.SEMANA)) {
             return this.environmentService.findAllByAvailabilityAndWeekRecurrence(
                     environmentAvailabilityDTO.getStarting_date(),
                     environmentAvailabilityDTO.getStarting_time(), environmentAvailabilityDTO.getEnding_time(),
-                    environmentAvailabilityDTO.getDay(), environmentAvailabilityDTO.getWeeks());
+                    environmentAvailabilityDTO.getDay(), environmentAvailabilityDTO.getWeeks(),pageable);
 
         } else if (environmentAvailabilityDTO.getRecurrence().equals(RecurrenceEnumeration.SEMESTRE)) {
             return this.environmentService.findAllByAvailabilityAndSemesterRecurrence(
                     environmentAvailabilityDTO.getStarting_time(), environmentAvailabilityDTO.getEnding_time(),
-                    environmentAvailabilityDTO.getDay());
+                    environmentAvailabilityDTO.getDay(),pageable);
 
         }
         return null;

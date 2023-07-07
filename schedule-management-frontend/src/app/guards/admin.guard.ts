@@ -24,7 +24,7 @@ export class AdminGuard implements CanActivate {
       .pipe(
         map(user => {
           console.log(user)
-          const esAdministrador = user?.authorities?.some(authority => authority.authority === 'ROLE_ADMIN');
+          const esAdministrador = user?.authorities?.some(authority => authority.authority === 'ROLE_ACADEMIC_MANAGER');
 
           if(esAdministrador)  {
             //Swal.fire("Welcome", "holaa","success")

@@ -12,7 +12,9 @@ import { ReportModule } from './views/report/report.module';
 import { OpenSesionGuard } from './guards/open-sesion.guard'
 import { AuthGuard } from './guards/auth.guard';
 import {AdminGuard} from './guards/admin.guard'
+import {ScheduleManagerGuard} from './guards/schedule-manager.guard'
 import { CloseSessionGuard } from './guards/close-session.guard'
+import { ChangePasswordComponent } from './views/pages/change-password/change-password.component';
 
 const routes: Routes = [
   {
@@ -26,6 +28,14 @@ const routes: Routes = [
     //canActivate: [CloseSessionGuard],
     data: {
       title: 'Login Page'
+    }
+  },
+  {
+    path: 'change-password/:id',
+    component: ChangePasswordComponent,
+
+    data: {
+      title: 'change password'
     }
   },
   {
@@ -44,11 +54,13 @@ const routes: Routes = [
       },
       {
         path: 'subject',
+
         loadChildren: () =>
           import('./views/subject/subject.module').then(m => m.SubjectModule)
       },
       {
         path: 'environment',
+
         loadChildren: () =>
           import('./views/environment/environment.module').then(m => m.EnvironmentModule)
       },
@@ -57,9 +69,14 @@ const routes: Routes = [
         loadChildren: () =>
           import('./views/resource/resource.module').then(m => m.ResourceModule)
       },
-
+      {
+        path:'reportes',
+        loadChildren: ()=>
+        import('./views/reportes/reportes.module').then(m=>m.ReportesModule)
+      },
       {
         path: 'schedule',
+
         loadChildren: () =>
           import('./views/schedule/schedule.module').then(m => m.ScheduleModule)
       },
@@ -72,7 +89,7 @@ const routes: Routes = [
         path: 'reporte',
         loadChildren: () =>
           import('./views/report/report.module').then(m => m.ReportModule),
-        canActivate: [ AdminGuard ],
+
       },
       {
         path: 'dashboard',

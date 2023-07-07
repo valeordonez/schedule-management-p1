@@ -27,18 +27,19 @@ export class EnvironmentFormComponent {
   @Output()emitterForm= new EventEmitter<Environment>();
 
   //variable para recolectar info del formulario
-  formEnvironment:Environment={
+  formEnvironment: Environment = {
     'id':0,
     'name':'',
     'location':'',
     'capacity':0,
     'environmentType':'',
     'facultyId':'',
-    'availableResources':[]
+    'availableResources': []
   };
-  environmentTypes:string[]=[]
-  // facultys:Faculty[]=[];
-  facultys:string[]=[];
+
+  environmentTypes: string[] = []
+  facultys:Faculty[]=[];
+  // facultys: string[] = [];
 
   constructor(
     private formBuilder:FormBuilder,
@@ -54,17 +55,20 @@ export class EnvironmentFormComponent {
   }
 
   ngOnInit():void{
+    /*Consulto los tipos de ambientes y las facultades*/
     this.environmentTypes=this.environmentService.getAllEnvironmentTypes();
-    this.facultys=this.environmentService.getAllFacultys();
-
+    this.environmentService.getAllFacultys().subscribe(response => {
+      this.facultys = response.data;
+      console.log("llega a facultys",this.facultys);
+    });
     // this.fillForm();
-
   }
+
   private fillForm(environment:Environment){
+    console.log("fillForm");
+    if(this.isEdit == true){
 
-    if(this.isEdit==true){
-
-      const environmentFill={
+      const environmentFill = {
         'id' :environment.id,
         'name':environment.name,
         'location':environment.location,
@@ -80,11 +84,31 @@ export class EnvironmentFormComponent {
     this.form = this.formBuilder.group({
       id: ['', []],
       name: ['', [Validators.required]],
-      location: ['',[Validators.required]],
-      capacity: ['', [Validators.required, Validators.min(2)]],
+      // location: ['',[Validators.required]],
+      location: ['',[]],
+      // capacity: ['', [Validators.required , Validators.min(2)]],
+      capacity: ['', []],
       environmentType: ['', [Validators.required]],
       faculty:['',[Validators.required]],
     });
+  }
+
+  validCapacity(){
+    if(this.form.get('environmentType')?.value != 'EDIFICIO'){
+      this.form.get('capacity')?.setValidators([Validators.required , Validators.min(2)]);
+    }else{
+      this.form.get('capacity')?.clearValidators();
+    }
+    this.form.get('capacity')?.updateValueAndValidity();
+  }
+  
+  validLocation(){
+    if(this.form.get('environmentType')?.value != 'EDIFICIO'){
+      this.form.get('location')?.setValidators([Validators.required]);
+    }else{
+      this.form.get('location')?.clearValidators();
+    }
+    this.form.get('location')?.updateValueAndValidity();
   }
 
   onSelectedValue(event:Event){
@@ -118,7 +142,7 @@ export class EnvironmentFormComponent {
   ngOnChanges(changes: SimpleChanges): void {
     if(changes['environment']){
       // console.log("environment cambio para form ",this.environment)
-
+      console.log("cambios en ngOnChanges ",this.environment);
       this.fillForm(this.environment);
 
     }
@@ -151,10 +175,25 @@ export class EnvironmentFormComponent {
     return  this.name?.touched && this.name?.invalid
   }
   get isLocationInvalid(){
-    return  this.location?.touched && this.location?.invalid
+    this.validLocation();
+    const environmentType = this.form.get('environmentType')?.value;
+    if(environmentType != 'EDIFICIO'){
+      return  this.location?.touched && this.location?.invalid
+    }else{
+      return false;
+    }
+    // return  this.location?.touched && this.location?.invalid
   }
   get isCapacityInvalid(){
-    return  this.capacity?.touched && this.capacity?.invalid
+    this.validCapacity();
+    const environmentType = this.form.get('environmentType')?.value;
+    if(environmentType != 'EDIFICIO'){
+      return  this.capacity?.touched && this.capacity?.invalid
+    }else{
+      return false;
+    }
+
+    // return  this.capacity?.touched && this.capacity?.invalid
   }
   get isEnvironmentTypeInvalid(){
     return  this.environmentType?.touched && this.environmentType?.invalid

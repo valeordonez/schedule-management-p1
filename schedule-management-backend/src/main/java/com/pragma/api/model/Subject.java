@@ -1,5 +1,6 @@
 package com.pragma.api.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,13 +10,15 @@ import javax.persistence.*;
 import java.util.Set;
 
 @Entity
+@Table(name = "subject")
 @Setter
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
 public class Subject {
+
     @Id
-    @Column(name = "subject_code",length = 30)
+    @Column(name = "subject_code", length = 30)
     private String subjectCode;
     @Column(length = 45, nullable = false)
     private String name;
@@ -28,6 +31,8 @@ public class Subject {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "program_id")
     private Program program;
+    @Getter(onMethod_ = @JsonIgnore)
     @OneToMany(mappedBy = "subject")
     private Set<Course> courses;
+
 }

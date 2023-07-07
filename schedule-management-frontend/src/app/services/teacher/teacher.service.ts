@@ -74,6 +74,7 @@ export class TeacherService {
 
   findAllByDepartmetName(deparmentId: string, type: string, page: number, pageSize: number): Observable<any> {
     //TODO agregar autorizacion
+    
     return this.http.get<any>(
       this.endPoint + '/byDepartmetId' + `?page=${page - 1}&size=${pageSize}&sort=personCode&order=ASC&departmentId=${deparmentId}&personType=${type}`)
       .pipe(
@@ -90,8 +91,8 @@ export class TeacherService {
     });
   }
   downloadTemplateService() {
-    console.log("llega al metodo al servicio ", this.endPoint);
-    return this.http.get(this.endPoint + '/downloadTemplate', { responseType: 'blob' });
+    console.log("llega al metodo al servicio vererrr", this.endPoint);
+    return this.http.get(this.endPoint + '/downloadTeacherTemplate', { responseType: 'blob' });
   }
 }
 

@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
+import { Auth } from 'src/app/models/auth.model';
 
 @Injectable({
   providedIn: 'root'
@@ -24,4 +25,5 @@ export class TokenService {
     localStorage.clear();
     this.router.navigate(['login']);
   }
+  
 }

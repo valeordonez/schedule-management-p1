@@ -4,6 +4,7 @@ import { Observable, catchError, throwError } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Environment } from 'src/app/models/environment.model';
 import { Faculty } from 'src/app/models/faculty.model';
+import { Resource } from 'src/app/models/resource.model';
 import { environment } from 'src/environments/environment';
 import Swal from 'sweetalert2';
 
@@ -29,10 +30,10 @@ export class EnvironmentService {
   ]
 
   environmentTypes = ['TODOS', 'AUDITORIO', 'LABORATORIO', 'SALON'];
-  facultys = ["FIET", "Ciencias"];
   EventTypes = ['Academico', 'Administrativo'];
-  recurrenciaTypes = ['Dia', 'Semana', 'Semestre'];
+  recurrenciaTypes = ['SEMANA', 'DIA', 'SEMESTRE'];
   endPoint: String = environment.urlEnv
+  endPointFaculty: String = environment.urlFaculty
   // endPoint:String = 'api/environment'
 
   httpOptions = {
@@ -90,9 +91,14 @@ export class EnvironmentService {
         })
       );
   }
-  addResourceToEnvironment(resourceId: number, environmentId: number) {
+  addResourceToEnvironment(resources: Resource[], environmentId: number) {
+    let resourcesId: number[] = [];
+    resources.forEach(resource => {
+      resourcesId.push(resource.id);
+    });
+    console.log("esto se va: " + resourcesId);
     //Todo agregar autorizacion
-    return this.http.post<any>(this.endPoint + '/addResource' + `?resourceId=${resourceId}&environmentId=${environmentId}`, this.httpOptions)
+    return this.http.post<any>(this.endPoint + '/addResourceForm' + `?resourceList=${resourcesId}&environmentId=${environmentId}`, this.httpOptions)
       .pipe(
         catchError((e) => {
 
@@ -102,14 +108,13 @@ export class EnvironmentService {
         })
       );
   }
-  updateEnvironment(environment: Environment) {
+  updateEnvironment(environment: Environment, environmentId: number) {
     //llamar a actualizar ambiente
-    console.log("ENTRAAAAAA ")
+    console.log("ENTRAAAAAA ", this.endPoint," ", environmentId)
     console.log(environment)
-    return this.http.post<any>(this.endPoint + '', environment, this.httpOptions)
+    return this.http.patch<any>(this.endPoint + '/update'+`/${environmentId}`, environment, this.httpOptions)
       .pipe(
         catchError((e) => {
-
           console.log('Error Actualizando el ambiente', e.error.mensaje, 'error');
           return throwError(e);
 
@@ -190,8 +195,14 @@ export class EnvironmentService {
     return this.recurrenciaTypes;
   }
 
-  getAllFacultys() {
-    return this.facultys;
+  getAllFacultys(): Observable<any> {
+    console.log("el endpoint es ", this.endPointFaculty + '/consultAllFaculty')
+      return this.http.get<any>(this.endPointFaculty + '/consultAllFaculty', { responseType: 'json' })
+        .pipe(
+          catchError((e) => {
+            console.log('Error obteniendo todos las facultades', e.error.mensaje, 'error');
+            return throwError(e);
+          }));
   }
 
   getEnvironmentsFromResource(resourceId: number) {

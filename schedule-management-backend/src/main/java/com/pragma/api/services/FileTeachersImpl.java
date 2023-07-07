@@ -3,18 +3,31 @@ package com.pragma.api.services;
 import com.pragma.api.domain.PersonDTO;
 import com.pragma.api.domain.ResponseFile;
 import com.pragma.api.model.enums.StatusFileEnumeration;
+import com.pragma.api.domain.*;
 import com.pragma.api.model.Department;
 import com.pragma.api.model.Person;
 import com.pragma.api.model.enums.PersonTypeEnumeration;
-import com.pragma.api.repository.IDeparmentRepository;
 import com.pragma.api.repository.IPersonRepository;
 import com.pragma.api.util.file.FileTeachers;
 import com.pragma.api.util.file.templateclasses.FileRowTeacher;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,25 +41,32 @@ public class FileTeachersImpl implements IFileTeachersService {
     private IPersonService iPersonService;
 
     @Autowired
-    private IDeparmentRepository deparmentRepository;
+    private ResourceLoader resourceLoader;
+
+    @Autowired
+    private  IDepartmentService departmentService;
 
     @Override
     public ResponseFile uploadFile(MultipartFile file) throws IOException {
         FileTeachers fileTeachers = new FileTeachers();
         ResponseFile responseFile = new ResponseFile();
         List<FileRowTeacher> logs = fileTeachers.getLogs(file, responseFile);
-        return processFile(logs);
+
+        if (logs.size() == 0) {
+            return responseFile;
+        }else {
+            return processFile(logs, responseFile);
+        }
     }
 
     @Override
-    public ResponseFile processFile(List<FileRowTeacher> logs) {
+    public ResponseFile processFile(List<FileRowTeacher> logs, ResponseFile responseFile) {
         List<String> infoLogs = new ArrayList<>();
         List<String> infoErrores = new ArrayList<>();
         List<String> infoLogsVacias = new ArrayList<>();
         List<String> infoErroresVacias = new ArrayList<>();
         List<String> infoErroresTipos = new ArrayList<>();
         List<String> infoSuccess = new ArrayList<>();
-        ResponseFile responseFile = new ResponseFile();
         List<FileRowTeacher> archivoProfesores = new ArrayList<>();
 
         int contRows = 0;
@@ -74,7 +94,7 @@ public class FileTeachersImpl implements IFileTeachersService {
 
                 //Validacion nombre vacio
                 if(log.getName_teacher().trim().length() == 0){
-                    infoErroresVacias.add("[FILA " + rowNum + "] EL NOMBRE DEL PROFESOR ESTA VACIO (NOMBRE OBLIGATORIO)");
+                    infoErroresVacias.add("[FILA " + (rowNum-1) + "] EL NOMBRE DEL PROFESOR ESTA VACIO (NOMBRE OBLIGATORIO)");
                     errorVacias = true;
                 }
 
@@ -83,12 +103,13 @@ public class FileTeachersImpl implements IFileTeachersService {
                 //if(log.getCode_teacher().equals(null)){
                 //if(log.getCode_teacher() == 0){
                 if(log.getCode_teacher().equals(0)){
-                    infoErroresVacias.add("[FILA " + rowNum + "] EL CODIGO DEL PROFESOR ESTA VACIO (CODIGO OBLIGATORIO)");
+                    infoErroresVacias.add("[FILA " + (rowNum-1) + "] EL CODIGO DEL PROFESOR ESTA VACIO (CODIGO OBLIGATORIO)");
                     errorVacias = true;
                 }
 
+                System.out.println("mirar este: " + log.getName_department());
                 if(log.getName_department().trim().length() == 0){
-                    infoErroresVacias.add("[FILA " + rowNum + "] EL DEPARTAMENTO DEL PROFESOR ESTA VACIO (DEPARTAMENTO OBLIGATORIO)");
+                    infoErroresVacias.add("[FILA " + (rowNum-1) + "] EL DEPARTAMENTO DEL PROFESOR ESTA VACIO (DEPARTAMENTO OBLIGATORIO)");
                     errorVacias = true;
                 }
 
@@ -101,7 +122,7 @@ public class FileTeachersImpl implements IFileTeachersService {
                     if(personDTO == null){
 
                         //buscamos el id del departamento
-                        Department department =  deparmentRepository.findDepartmentByDepartmentName(log.getName_department().trim());
+                        Department department =  departmentService.findDepartmentByDepartmentName(log.getName_department().trim());
 
                         if(department != null){
                             Person person = new Person();
@@ -113,15 +134,15 @@ public class FileTeachersImpl implements IFileTeachersService {
                             infoLogs.add("Teacher Created succesfully!");
                         }else{
                             errorDepartamento = true;
-                            infoErrores.add("[FILA " + rowNum + "] EL DEPARTAMENTO ASIGNADO AL PROFESOR NO SE ENCUENTRA REGISTRADO: " + log.getName_department().trim());
+                            infoErrores.add("[FILA " + (rowNum-1) + "] EL DEPARTAMENTO ASIGNADO AL PROFESOR NO SE ENCUENTRA REGISTRADO: " + log.getName_department().trim());
                             infoLogs.add("Teacher NOT Created");
                         }
 
                         if (!errorDepartamento) {
-                            infoLogs.add("[FILA " + rowNum + "] LISTA PARA SER REGISTRADA");
+                            infoLogs.add("[FILA " + (rowNum-1) + "] LISTA PARA SER REGISTRADA");
                             contSuccess++;
                         } else {
-                            infoLogs.add("[FILA " + rowNum + "] CONTIENE ERRORES:");
+                            infoLogs.add("[FILA " + (rowNum-1) + "] CONTIENE ERRORES:");
                             for (String infoError : infoErrores) {
                                 infoLogs.add(infoError);
                             }
@@ -132,7 +153,7 @@ public class FileTeachersImpl implements IFileTeachersService {
                 }
 
                 if (!errorDepartamento && !errorProgram && !errorVacias && !errorTipos && !errorRepetidos) {
-                    infoSuccess.add("[FILA " + rowNum + "]  LISTA PARA SER REGISTRADA");
+                    infoSuccess.add("[FILA " + (rowNum-1) + "]  LISTA PARA SER REGISTRADA");
                     archivoProfesores.add(log);
                     contSuccess++;
                 } else {
@@ -166,4 +187,121 @@ public class FileTeachersImpl implements IFileTeachersService {
         return responseFile;
     }
 
+    @Override
+    public ResponseEntity<Resource> donwloadTeacherTemplateFile() throws IOException {
+        List<String> listPath = getPathTemplate("Plantilla_profesores.xlsx");
+        String path = listPath.get(0);
+        byte[] temporaryFile;
+
+        //Procesar el archivo de excel
+        try {
+            temporaryFile = Files.readAllBytes(Path.of(listPath.get(0)));
+        }catch (IOException e){
+            temporaryFile = Files.readAllBytes(Path.of(listPath.get(1)));
+            path = listPath.get(1);
+        }
+        Workbook workbook = processExcelFile(path);
+
+        //Ahora se guarda el archivo en un OutputStream
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        workbook.write(baos);
+        workbook.close();
+
+        // Crear un recurso a partir del contenido del archivo
+        ByteArrayResource resource = new ByteArrayResource(baos.toByteArray());
+
+        // Configurar las cabeceras de respuesta
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Disposition", "attachment; filename=Plantilla_profesores.xlsx");
+        headers.add("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+        //Cierro el libro
+        workbook.close();
+        baos.close();
+
+        //restoreFile(path,pathBackup);
+        restoreFileBytes(temporaryFile,path);
+        // Devolver el archivo como respuesta
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(resource);
+    }
+
+
+    private List<String> getPathTemplate(String nameFile) {
+        //final String pathProjectFileMilthon = "src/main/resources/files/templates/Plantilla_profesores.xlsx";
+        final String pathProjectFileMain = "schedule-management-backend/src/main/resources/files/templates/Plantilla_profesores.xlsx";
+        final String pathProjectFileAux = "src/main/resources/files/templates/Plantilla_profesores.xlsx";
+        try {
+            Resource resource = resourceLoader.getResource("file:" + nameFile);
+            File file = resource.getFile();
+            String absolutePath = file.getAbsolutePath();
+            //Cambio e \ por / para que la ruta sea correcta
+            absolutePath = absolutePath.replace("\\","/");
+            String pathFormat[] = absolutePath.split("/");
+            pathFormat[pathFormat.length-1] = "";
+            //String pathComplete = String.join("/",pathFormat) + pathProjectFileMilthon;
+            String pathCompleteMain = String.join("/",pathFormat) + pathProjectFileMain;
+            String pathCompleteAux = String.join("/",pathFormat) + pathProjectFileAux;
+
+            List<String> listPathComplete = new ArrayList<>();
+            listPathComplete.add(pathCompleteMain);
+            listPathComplete.add(pathCompleteAux);
+            return listPathComplete;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
+     * Metodo que me permite restaurar la plantilla
+     * @param temporary copia temporal de plantilla en RAM
+     * @param path ruta de la plantilla existente
+     *
+     */
+
+    private void restoreFileBytes(byte[] temporary, String path) throws IOException {
+        if (temporary != null) {
+            // Restaura el archivo original desde la copia temporal en memoria RAM
+            Files.write(Path.of(path), temporary);
+
+            // Limpia la copia temporal en memoria RAM
+            temporary = null;
+        }
+    }
+
+
+    private Workbook processExcelFile(String path) throws IOException {
+
+        //consultamos todos los departamentos
+        List<DepartmentDTO> departments = departmentService.findAll();
+        System.out.println("xxxxxxxxxxxxxxxxx");
+        departments.forEach(x-> System.out.println(x.getDepartmentName()));
+
+
+        // Cargar el archivo existente
+        Workbook workbook = WorkbookFactory.create(new File(path));
+
+
+        //obtengo la hoja 2 (DEPARTAMENTOS)
+        Sheet sheetSubjects = workbook.getSheetAt(1);
+
+        //MODIFICAMOS EL ARCHIVO EXCEL
+        for (int i = 1; i <= departments.size(); i++) {
+            System.out.println("lega");
+            Row row = sheetSubjects.getRow(i);
+
+            row.getCell(0).setCellValue(departments.get(i-1).getDepartmentId());
+            row.getCell(1).setCellValue(departments.get(i-1).getDepartmentName());
+        }
+
+
+        return workbook;
+    }
+
 }
+
+
+

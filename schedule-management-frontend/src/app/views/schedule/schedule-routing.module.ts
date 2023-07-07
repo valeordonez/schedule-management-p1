@@ -7,7 +7,10 @@ import { ScheduleDetailComponent } from './schedule-detail/schedule-detail.compo
 import { ScheduleProfessorDetailComponent } from './schedule-professor-detail/schedule-professor-detail.component';
 import { ScheduleUpdateComponent } from './schedule-update/schedule-update.component';
 import { ScheduleReserveCreateComponent } from './schedule-reserve-create/schedule-reserve-create.component';
+import { AdminGuard } from 'src/app/guards/admin.guard';
+import { ScheduleManagerGuard } from 'src/app/guards/schedule-manager.guard';
 
+import { ScheduleReserveConsultComponent } from './schedule-reserve-consult/schedule-reserve-consult.component';
 const routes: Routes = [
   {
     path: '',
@@ -17,11 +20,12 @@ const routes: Routes = [
     children: [
       {
         path: '',
-        redirectTo: '/all',
+        redirectTo: 'all',
         pathMatch: 'full'
       },
       {
         path: 'all',
+        canActivate:[ScheduleManagerGuard],
         component: ScheduleCreateComponent,
         data: {
           title: 'all',
@@ -30,6 +34,7 @@ const routes: Routes = [
       {
 
         path: 'create',
+        canActivate:[ScheduleManagerGuard],
         component: ScheduleCreateComponent,
         data: {
           title: 'create'
@@ -37,9 +42,17 @@ const routes: Routes = [
       },
       {
         path: 'reserve',
+        canActivate:[ScheduleManagerGuard],
         component: ScheduleReserveCreateComponent,
         data: {
           title: 'reserve'
+        }
+      },
+      {
+        path: 'consultreserve',
+        component: ScheduleReserveConsultComponent,
+        data: {
+          title: 'consultreserve'
         }
       },
       {
@@ -58,20 +71,22 @@ const routes: Routes = [
       },
       {
         path: 'update/:ambienteId/:scheduleData',
+        canActivate:[ScheduleManagerGuard],
         component: ScheduleUpdateComponent,
         data: {
           title: 'updateSchedule'
         }
       },
       {
-        path: 'upload-oa',
+        path: 'oa/upload-oa',
+        canActivate: [ AdminGuard ],
         component: OaUploadComponent,
         data: {
           title: 'Subir oferta'
         }
       },
       {
-        path: 'view-files-oa',
+        path: 'oa/view-files-oa',
         component: OaViewFilesComponent,
         data: {
           title: 'Ver archivos '

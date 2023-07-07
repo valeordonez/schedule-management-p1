@@ -5,6 +5,7 @@ import com.pragma.api.domain.GenericPageableResponse;
 import com.pragma.api.domain.Response;
 import com.pragma.api.domain.SubjectDTO;
 import com.pragma.api.model.Program;
+import com.pragma.api.model.Subject;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
@@ -54,4 +55,10 @@ public interface ISubjectService {
 
     GenericPageableResponse findAllByProgramId(String program_id, Pageable pageable);
 
+    //Metodo para buscar los semestres existentes a un programa aosciados en la tabla de materia, para poder luego ser seleccionados,
+    //Recibiendo un id_programa
+
+    public Response<List<SubjectDTO>> findAllSemesterByProgramId(String programId);
+
+    public List<Subject> findAllPrueba();
 }
